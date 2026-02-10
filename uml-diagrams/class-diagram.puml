@@ -1,0 +1,289 @@
+@startuml
+!theme plain
+title Real-Time Multi-Modal Collaborative Notes App - Class Diagram
+
+' Global Managers (Singletons)
+class YDocManager {
+  - {static} instance: YDocManager
+  - ydoc: Y.Doc
+  - yRichText: Y.Text
+  - yStrokes: Y.Array<StrokePoint>
+  - yFrames: Y.Map<Frame>
+  - yMedia: Y.Map<string>
+  - yMeta: Y.Map<NoteMetadata>
+  + {static} getInstance(): YDocManager
+  + initialize(): void
+  + getYDoc(): Y.Doc
+  + updateMeta(key: string, value: any): void
+}
+note right of YDocManager : Singleton Pattern\nManages Yjs collaborative document
+
+class ConnectionManager {
+  - {static} instance: ConnectionManager
+  - provider: WebsocketProvider
+  - awareness: Awareness
+  + {static} getInstance(): ConnectionManager
+  + connect(noteId: string): void
+  + disconnect(): void
+}
+note right of ConnectionManager : Singleton Pattern\nWebSocket connection manager
+
+class UserManager {
+  - {static} instance: UserManager
+  - currentNoteId: string
+  - currentUser: AwarenessUser
+  + {static} getInstance(): UserManager
+  + setCurrentUser(user: AwarenessUser): void
+}
+note right of UserManager : Singleton Pattern\nCurrent user context
+
+' Controllers & Services
+class CollabController {
+  + connectToNote(noteId: string): void
+  + disconnectFromNote(): void
+}
+note right of CollabController : Facade Pattern\nOrchestrates collaboration
+
+class ShareController {
+  + makeNotePublic(): string
+}
+note right of ShareController : MVC Controller\nManages sharing
+
+class NotesModel {
+  - noteList: NoteMetadata[]
+  + loadNoteList(): Promise<void>
+  + createNewNote(): string
+}
+note right of NotesModel : MVC Model\nData storage abstraction
+
+class NotesController {
+  + fetchNotes(): void
+}
+
+class AIFacade {
+  + uploadScreenshot(): Promise<string>
+  + triggerAIQuestion(content: string, question: string): Promise<string>
+}
+note right of AIFacade : Facade Pattern\nUnified AI interface
+
+class EditController {
+  + switchEditingMode(mode: string): void
+  + createNewFrame(type: string): void
+  + deleteFrame(id: string): void
+}
+note right of EditController : MVC Controller\nEditing operations
+
+' Command Pattern
+abstract class AbstractCommand {
+  + {abstract} execute(): void
+}
+note right of AbstractCommand : Command Pattern\nAbstract base
+
+class InsertSpecialSignCommand {
+  + execute(): void
+}
+
+class InsertSpecialElementCommand {
+  + execute(): void
+}
+
+class CommandProcessor {
+  - commandBuffer: string
+  - expectingParameter: boolean
+  - invalidParameterRange: {from: number, to: number}
+  + handleCommandInput(event: KeyboardEvent): void
+  + applyParameterValidation(): void
+  + clearParameterValidation(): void
+  + finalizeCommand(): void
+  + execute(command: AbstractCommand): void
+}
+note right of CommandProcessor : Command Pattern\nInvoker + Strategy
+
+class PopupManager {
+  + showElementPopup(type: string): Promise<any>
+}
+
+' State Pattern - Editing Modes
+class ModeContext {
+  - currentState: EditingState
+  + setState(state: EditingState): void
+}
+note right of ModeContext : State Pattern\nContext
+
+abstract class EditingState {
+  + {abstract} render(): void
+  + {abstract} handleInput(event: Event): void
+}
+note right of EditingState : State Pattern\nAbstract state
+
+class WordState {
+  + render(): void
+  + handleInput(event: Event): void
+}
+
+class PPTState {
+  + render(): void
+  + handleInput(event: Event): void
+}
+
+class HandwriteState {
+  + render(): void
+  + handleInput(event: Event): void
+}
+
+' State Pattern - Screen Asking Mode
+class ScreenAskingContext {
+  - currentState: ScreenAskingState
+  + toggleScreenAskingMode(): void
+  + setState(state: ScreenAskingState): void
+}
+
+abstract class ScreenAskingState {
+  + {abstract} captureCurrentNotePage(): Image
+  + {abstract} detectScreenshotLocationInNote(): Location
+  + {abstract} startLabelRectangleDrag(): void
+  + {abstract} updateLabelRectangle(): void
+  + {abstract} finishLabelRectangle(): void
+  + {abstract} processFinalCapture(): void
+}
+
+class AskingModeState {
+  + captureCurrentNotePage(): Image
+  + detectScreenshotLocationInNote(): Location
+  + startLabelRectangleDrag(): void
+  + updateLabelRectangle(): void
+  + finishLabelRectangle(): void
+  + processFinalCapture(): void
+}
+
+' Factory Pattern
+class FrameFactory {
+  + createFrame(type: string, params: FrameParams): Frame
+}
+note right of FrameFactory : Factory Pattern\nCreates Frame instances
+
+' Backend Controllers
+class WSController {
+  + setupWSConnection(client: WebSocket): void
+  + authenticateConnection(token: string): boolean
+}
+
+class PersistenceSingleton {
+  - {static} instance: PersistenceSingleton
+  + {static} getInstance(): PersistenceSingleton
+  + loadYDoc(noteId: string): Y.Doc
+  + saveYDoc(noteId: string, doc: Y.Doc): void
+}
+note right of PersistenceSingleton : Singleton Pattern\nDB storage
+
+class AIWebhookController {
+  + handleAIResult(req: Request): void
+}
+
+class NotesAPIController {
+  + getNoteSnapshot(id: string): Response
+  + createNote(): Response
+}
+
+' Data Models
+class StrokePoint {
+  + x: number
+  + y: number
+  + pressure: number
+  + color: string
+  + width: number
+  + time: number
+}
+
+class Frame {
+  + id: string
+  + type: string
+  + x: number
+  + y: number
+  + width: number
+  + height: number
+  + zIndex: number
+  + content: string
+  + url: string
+  + locked: boolean
+}
+
+class NoteMetadata {
+  + id: string
+  + title: string
+  + ownerId: string
+  + isPublic: boolean
+  + createdAt: Date
+  + updatedAt: Date
+  + tags: string[]
+}
+
+class AwarenessUser {
+  + id: string
+  + name: string
+  + color: string
+  + cursorPosition: {x: number, y: number}
+  + selectedFrame: string
+}
+
+' Views (Representative classes)
+abstract class BaseView {
+  + {abstract} render(): void
+}
+
+class SignInView {
+  + render(): void
+}
+
+class WorkplaceView {
+  + render(): void
+}
+
+class EditView {
+  + render(): void
+}
+
+' Relationships
+CollabController --> YDocManager : uses
+CollabController --> ConnectionManager : uses
+ConnectionManager --> YDocManager : observes
+UserManager --> ConnectionManager : observes
+
+NotesController --> NotesModel : composes
+ShareController --> YDocManager : uses
+EditController --> YDocManager : uses
+EditController --> ModeContext : uses
+
+ModeContext --> EditingState : composes
+EditingState <|-- WordState : extends
+EditingState <|-- PPTState : extends
+EditingState <|-- HandwriteState : extends
+EditController --> FrameFactory : uses
+
+CommandProcessor --> AbstractCommand : invokes
+AbstractCommand <|-- InsertSpecialSignCommand : extends
+AbstractCommand <|-- InsertSpecialElementCommand : extends
+InsertSpecialElementCommand --> PopupManager : uses
+
+WordState --> CommandProcessor : uses
+AIFacade --> YDocManager : uses
+
+ScreenAskingContext --> ScreenAskingState : composes
+ScreenAskingState <|-- AskingModeState : extends
+AskingModeState --> AIFacade : uses
+
+WSController --> PersistenceSingleton : uses
+NotesAPIController --> PersistenceSingleton : uses
+AIWebhookController --> WSController : uses
+
+YDocManager --> Frame : manages
+YDocManager --> StrokePoint : manages
+YDocManager --> NoteMetadata : manages
+ConnectionManager --> AwarenessUser : manages
+
+BaseView <|-- SignInView : extends
+BaseView <|-- WorkplaceView : extends
+BaseView <|-- EditView : extends
+
+@enduml
+

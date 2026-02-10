@@ -1,0 +1,5 @@
+C:/my-note-app/build/CMakeFiles/install/local.dir
+C:/my-note-app/build/CMakeFiles/install.dir
+C:/my-note-app/build/CMakeFiles/edit_cache.dir
+C:/my-note-app/build/CMakeFiles/rebuild_cache.dir
+C:/my-note-app/build/CMakeFiles/list_install_components.dir

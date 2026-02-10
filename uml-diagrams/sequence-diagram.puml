@@ -1,0 +1,97 @@
+@startuml
+!theme plain
+title Real-Time Multi-Modal Collaborative Notes App - Sequence Diagram\n(Opening Note and Real-Time Collaboration)
+
+actor User
+participant "WorkplaceView" as WPView
+participant "NotesController" as NotesCtrl
+participant "EditController" as EditCtrl
+participant "CollabController" as CollabCtrl
+participant "ConnectionManager" as ConnMgr
+participant "YDocManager" as YDocMgr
+participant "ModeContext" as ModeCtx
+participant "WordState" as WState
+participant "UserManager" as UserMgr
+participant "WSController" as WSCtrl
+participant "PersistenceSingleton" as Persist
+
+User -> WPView : Click on note block
+activate WPView
+
+WPView -> NotesCtrl : getNoteMetadata(noteId)
+activate NotesCtrl
+NotesCtrl --> WPView : NoteMetadata
+deactivate NotesCtrl
+
+WPView -> EditCtrl : openNote(noteId)
+activate EditCtrl
+
+EditCtrl -> UserMgr : setCurrentNote(noteId)
+activate UserMgr
+UserMgr --> EditCtrl : ok
+deactivate UserMgr
+
+EditCtrl -> CollabCtrl : connectToNote(noteId)
+activate CollabCtrl
+
+CollabCtrl -> ConnMgr : getInstance().connect(noteId)
+activate ConnMgr
+
+ConnMgr -> YDocMgr : getInstance().getYDoc()
+activate YDocMgr
+YDocMgr --> ConnMgr : Y.Doc
+deactivate YDocMgr
+
+ConnMgr -> WSCtrl : setupWSConnection(noteId)
+activate WSCtrl
+
+WSCtrl -> Persist : loadYDoc(noteId)
+activate Persist
+Persist --> WSCtrl : Y.Doc (from DB)
+deactivate Persist
+
+WSCtrl --> ConnMgr : Connection established
+deactivate WSCtrl
+
+ConnMgr --> CollabCtrl : Connected
+deactivate ConnMgr
+
+CollabCtrl --> EditCtrl : Connection ready
+deactivate CollabCtrl
+
+EditCtrl -> ModeCtx : setState(new WordState())
+activate ModeCtx
+
+ModeCtx -> WState : activate()
+activate WState
+WState --> ModeCtx : Ready
+deactivate WState
+
+ModeCtx --> EditCtrl : Mode switched
+deactivate ModeCtx
+
+EditCtrl -> WPView : Navigate to EditView
+WPView --> User : Display edit layout
+deactivate WPView
+
+' Real-time collaboration
+User -> WState : Types text
+activate WState
+
+WState -> YDocMgr : updateYRichText(text)
+activate YDocMgr
+
+YDocMgr -> ConnMgr : Broadcast via Yjs
+activate ConnMgr
+ConnMgr --> YDocMgr : Synced
+deactivate ConnMgr
+
+YDocMgr --> WState : Updated
+deactivate YDocMgr
+WState --> User : Text appears
+deactivate WState
+
+note over ConnMgr, WSCtrl : Real-time sync via WebSocket\nChanges propagate to all connected users
+
+@enduml
+

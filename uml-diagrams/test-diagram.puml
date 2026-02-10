@@ -1,0 +1,36 @@
+@startuml
+!theme plain
+
+title Simple Test UML Class Diagram
+
+class User {
+  -String name
+  -String email
+  +login()
+  +logout()
+  +getProfile()
+}
+
+class Note {
+  -String id
+  -String title
+  -String content
+  -Date createdAt
+  +save()
+  +delete()
+  +update()
+}
+
+class NoteManager {
+  -List<Note> notes
+  +createNote()
+  +getNote(id)
+  +getAllNotes()
+  +deleteNote(id)
+}
+
+User "1" --> "*" Note : creates
+NoteManager "1" --> "*" Note : manages
+
+@enduml
+

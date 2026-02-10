@@ -1,0 +1,113 @@
+@startuml
+!theme plain
+title Real-Time Multi-Modal Collaborative Notes App - State Diagram\n(Editing Modes and Screen Asking Mode)
+
+state "Edit Layout" as EditLayout {
+  state "Mode Selection" as ModeSelection
+  
+  [*] --> ModeSelection
+  
+  state "Editing Modes" as EditingModes {
+    state WordState {
+      state "Text Editing" as TextEdit
+      state "Command Mode" as CmdMode
+      
+      [*] --> TextEdit
+      TextEdit : Entry / Enable rich text editor
+      TextEdit : Do / Handle text input, formatting
+      TextEdit : Exit / Save changes to YDocManager
+      
+      TextEdit -> CmdMode : User types '\'
+      CmdMode : Entry / Highlight command buffer
+      CmdMode : Do / Validate command syntax
+      CmdMode : Exit / Clear validation
+      CmdMode -> TextEdit : Valid command executed\nOR Esc pressed
+    }
+    
+    state PPTState {
+      state "Frame Selection" as FrameSel
+      state "Frame Editing" as FrameEdit
+      
+      [*] --> FrameSel
+      FrameSel : Entry / Show frame handles
+      FrameSel : Do / Display yFrames
+      FrameSel -> FrameEdit : Click on frame
+      FrameEdit : Entry / Enable resize/drag
+      FrameEdit : Do / Update frame position/size
+      FrameEdit -> FrameSel : Click outside
+    }
+    
+    state HandwriteState {
+      state "Drawing" as Drawing
+      state "OCR Processing" as OCR
+      
+      [*] --> Drawing
+      Drawing : Entry / Enable canvas, pen input
+      Drawing : Do / Capture strokes, add to yStrokes
+      Drawing -> OCR : User triggers OCR
+      OCR : Entry / Send strokes to AIFacade
+      OCR : Do / Process via n8n, insert text
+      OCR -> Drawing : OCR complete
+    }
+  }
+  
+  ModeSelection -> WordState : Select Word mode
+  ModeSelection -> PPTState : Select PPT mode
+  ModeSelection -> HandwriteState : Select Handwrite mode
+  
+  WordState --> ModeSelection : Switch mode
+  PPTState --> ModeSelection : Switch mode
+  HandwriteState --> ModeSelection : Switch mode
+}
+
+state "Screen Asking Mode" as ScreenAsking {
+  state "Inactive" as SAMInactive
+  state "Active" as SAMActive {
+    state "Creating Rectangles" as CreatingRects
+    state "Capturing" as Capturing
+    state "Processing" as Processing
+  }
+  
+  [*] --> SAMInactive
+  SAMInactive : Entry / Normal editing mode
+  SAMInactive : Do / Standard edit operations
+  
+  SAMInactive -> SAMActive : Press Ctrl+P
+  SAMActive : Entry / Show overlay, enable capture
+  
+  SAMActive -> CreatingRects : User drags mouse
+  CreatingRects : Entry / Start rectangle creation
+  CreatingRects : Do / Draw blue rectangle, handle resize
+  CreatingRects -> Capturing : Rectangle finished
+  
+  Capturing : Entry / Rectangle labeled (ra0, ra1, etc.)
+  Capturing : Do / Store rectangle in cache
+  Capturing -> CreatingRects : User creates more rectangles
+  Capturing -> Processing : Click "Finish"
+  
+  Processing : Entry / Capture screenshot + rectangles
+  Processing : Do / Save to AI cache, open AI chat
+  Processing -> SAMInactive : Exit screen asking mode
+  
+  SAMActive -> SAMInactive : Press Ctrl+P again (toggle off)
+}
+
+state "Application States" as AppStates {
+  state SignInLayout {
+    [*] --> Authenticating
+    state Authenticating : Entry / Show login form
+    Authenticating -> WorkplaceLayout : Login successful
+  }
+  
+  state WorkplaceLayout {
+    [*] --> Browsing
+    state Browsing : Entry / Display note grid
+    Browsing -> EditLayout : Click note block
+  }
+  
+  WorkplaceLayout -> SignInLayout : Logout
+  EditLayout -> WorkplaceLayout : Exit note
+}
+
+@enduml
+

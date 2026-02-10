@@ -1,0 +1,107 @@
+@startuml
+!theme plain
+title Command Pattern - Special Command Input Feature
+
+participant User
+participant WordState
+participant "CommandProcessor\n(Invoker)" as CommandProcessor
+participant "AbstractCommand\n(Abstract)" as AbstractCommand
+participant "InsertSpecialSignCommand\n(Concrete Command)" as InsertSpecialSignCommand
+participant "InsertSpecialElementCommand\n(Concrete Command)" as InsertSpecialElementCommand
+participant PopupManager
+participant "YDocManager\n(Receiver)" as YDocManager
+
+== User Types Command ==
+
+User -> WordState : Types backslash pi
+activate WordState
+WordState -> CommandProcessor : handleCommandInput(event)
+activate CommandProcessor
+
+CommandProcessor : commandBuffer = backslash pi
+CommandProcessor : expectingParameter = false
+
+== User Presses Space/Enter ==
+
+User -> WordState : Presses Space or Enter
+WordState -> CommandProcessor : finalizeCommand()
+
+CommandProcessor : validateCommand()
+CommandProcessor : Check if command exists and parameters are valid
+
+alt Valid Math Symbol Command
+    CommandProcessor -> InsertSpecialSignCommand : create(command)
+    activate InsertSpecialSignCommand
+    CommandProcessor -> InsertSpecialSignCommand : execute()
+    
+    InsertSpecialSignCommand -> YDocManager : insertSymbol(pi symbol)
+    activate YDocManager
+    YDocManager : Update yRichText with symbol
+    YDocManager --> InsertSpecialSignCommand : Symbol inserted
+    deactivate YDocManager
+    
+    InsertSpecialSignCommand --> CommandProcessor : Success
+    deactivate InsertSpecialSignCommand
+    
+    CommandProcessor --> WordState : Command executed
+    WordState --> User : Symbol appears in document
+    
+else Valid Element Command
+    CommandProcessor -> InsertSpecialElementCommand : create(command)
+    activate InsertSpecialElementCommand
+    CommandProcessor -> InsertSpecialElementCommand : execute()
+    
+    InsertSpecialElementCommand -> PopupManager : showElementPopup(image)
+    activate PopupManager
+    PopupManager --> User : Display image picker popup
+    User --> PopupManager : Selects image URL or uploads file
+    PopupManager --> InsertSpecialElementCommand : Returns image URL
+    deactivate PopupManager
+    
+    InsertSpecialElementCommand -> YDocManager : insertFrame(imageFrame)
+    activate YDocManager
+    YDocManager : Create new Frame in yFrames
+    YDocManager --> InsertSpecialElementCommand : Frame inserted
+    deactivate YDocManager
+    
+    InsertSpecialElementCommand --> CommandProcessor : Success
+    deactivate InsertSpecialElementCommand
+    
+    CommandProcessor --> WordState : Command executed
+    WordState --> User : Image frame appears in document
+    
+else Invalid Command or Missing Parameters
+    CommandProcessor : Command not found OR parameters invalid
+    CommandProcessor : applyParameterValidation()
+    CommandProcessor --> User : Show red underline
+    CommandProcessor --> WordState : Keep as plain text
+    WordState --> User : Text remains unchanged
+end
+
+deactivate CommandProcessor
+deactivate WordState
+
+note right of CommandProcessor
+  Command Pattern Structure:
+  
+  - Invoker: CommandProcessor
+  - Command: AbstractCommand (interface)
+  - Concrete Commands: InsertSpecialSignCommand,
+    InsertSpecialElementCommand
+  - Receiver: YDocManager (performs actual operations)
+  
+  The CommandProcessor validates and routes
+  to appropriate command objects, which
+  encapsulate the operations.
+end note
+
+note right of AbstractCommand
+  AbstractCommand defines the execute()
+  interface that all concrete commands
+  must implement.
+  
+  This enables polymorphic command handling
+  and makes it easy to add new command types.
+end note
+
+@enduml

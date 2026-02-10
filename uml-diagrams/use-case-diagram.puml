@@ -1,0 +1,68 @@
+@startuml
+!theme plain
+title Real-Time Multi-Modal Collaborative Notes App - Use Case Diagram
+
+left to right direction
+
+actor User
+actor Collaborator
+actor "AI System" as AISystem
+
+rectangle "Authentication & Access" {
+  User --> (Sign In) : Authenticate
+  User --> (Sign Up) : Register
+  User --> (Social Login) : Login with Google/Apple
+}
+
+rectangle "Note Management" {
+  User --> (View Workplace) : Browse notes
+  User --> (Create Note) : New note
+  User --> (Open Note) : Edit note
+  User --> (Delete Note) : Remove note
+  User --> (Search Notes) : Find notes
+}
+
+rectangle "Editing Features" {
+  User --> (Word Mode Editing) : Text editing
+  User --> (PPT Mode Editing) : Frame-based editing
+  User --> (Handwriting Mode) : Draw/annotate
+  User --> (Switch Editing Mode) : Change mode
+  User --> (Use Slash Commands) : Insert symbols/elements
+}
+
+rectangle "Collaboration" {
+  User --> (Share Note) : Make public/generate link
+  User --> (Real-time Sync) : Multi-user editing
+  Collaborator --> (Real-time Sync) : See live changes
+  User --> (View Collaborators) : See active users
+  Collaborator --> (View Collaborators) : Show presence
+}
+
+rectangle "AI Features" {
+  User --> (OCR Conversion) : Convert handwriting to text
+  User --> (AI Chat) : Ask questions
+  User --> (Screen Asking Mode) : Capture & ask about sections
+  User --> (AI Summarization) : Summarize content
+  AISystem --> (OCR Conversion) : Process strokes
+  AISystem --> (AI Chat) : Generate responses
+  AISystem --> (AI Summarization) : Create summary
+}
+
+rectangle "Special Features" {
+  User --> (Ctrl+P Screen Asking) : Visual question mode
+  User --> (Command Palette) : Quick insert menu
+  User --> (Element Insertion) : Add images/videos/graphs
+}
+
+' Relationships
+(Real-time Sync) .> (Word Mode Editing) : extends
+(Real-time Sync) .> (PPT Mode Editing) : extends
+(Real-time Sync) .> (Handwriting Mode) : extends
+
+(Use Slash Commands) .> (Element Insertion) : includes
+(Use Slash Commands) .> (Command Palette) : includes
+
+(Screen Asking Mode) .> (AI Chat) : uses
+
+@enduml
+

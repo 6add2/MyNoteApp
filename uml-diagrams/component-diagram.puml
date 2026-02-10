@@ -1,0 +1,86 @@
+@startuml
+!theme plain
+title Real-Time Multi-Modal Collaborative Notes App - Component/Deployment Diagram
+
+package "Frontend (Svelte + NativeScript)" {
+  component [SignInView]
+  component [WorkplaceView]
+  component [EditView]
+  component [AuthController]
+  component [NotesController]
+  component [EditController]
+  component [CollabController]
+  component [ShareController]
+  component [AIFacade]
+  component [CommandProcessor]
+  component [PopupManager]
+  component [ModeContext]
+  component [ScreenAskingContext]
+  component [EditingState]
+  component [ScreenAskingState]
+  component [YDocManager]
+  component [ConnectionManager]
+  component [UserManager]
+}
+
+package "Backend (Node.js)" {
+  component [WSController]
+  component [NotesAPIController]
+  component [AuthAPIController]
+  component [PersistenceSingleton]
+  component [AIWebhookController]
+  database [Database]
+}
+
+package "External Services" {
+  cloud n8n {
+    component [OCR Workflow]
+    component [AI Chat Workflow]
+    component [Summarization Workflow]
+  }
+  database MongoDB
+}
+
+' Frontend connections
+[SignInView] --> [AuthController]
+[WorkplaceView] --> [NotesController]
+[EditView] --> [EditController]
+[EditController] --> [CollabController]
+[EditController] --> [ModeContext]
+[ModeContext] --> [EditingState]
+[EditController] --> [CommandProcessor]
+[ShareController] --> [YDocManager]
+[CollabController] --> [ConnectionManager]
+[CollabController] --> [YDocManager]
+[AIFacade] --> [YDocManager]
+[CommandProcessor] --> [PopupManager]
+[ScreenAskingContext] --> [ScreenAskingState]
+
+' Backend connections
+[WSController] --> [PersistenceSingleton]
+[NotesAPIController] --> [PersistenceSingleton]
+[AuthAPIController] --> [PersistenceSingleton]
+[PersistenceSingleton] --> Database
+[AIWebhookController] --> [WSController]
+
+' Frontend-Backend connections
+[ConnectionManager] --> [WSController] : WebSocket
+[NotesController] --> [NotesAPIController] : HTTP
+[AuthController] --> [AuthAPIController] : HTTP
+[AIFacade] --> [AIWebhookController] : triggers AI
+[AIWebhookController] --> n8n : webhook calls
+n8n --> [AIWebhookController] : results
+
+note right of [YDocManager]
+  YDocManager syncs via
+  WebSocket with backend
+  for real-time collaboration
+end note
+
+note right of [AIWebhookController]
+  Receives AI results from n8n
+  and broadcasts to connected
+  clients via WebSocket
+end note
+
+@enduml
