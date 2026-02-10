@@ -10,6 +10,8 @@
   let name = '';
   let confirmPassword = '';
   let localError = '';
+
+  console.log('VITE_API_URL =', import.meta.env.VITE_API_URL);
   
   // Redirect if already authenticated
   onMount(() => {

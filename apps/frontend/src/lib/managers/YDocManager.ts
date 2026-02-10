@@ -113,7 +113,10 @@ class PageStructureManager {
     this.mainNoteId = mainNoteId;
 
     // Connect to the main note's room for page structure
-    const wsUrl = (import.meta as any).env?.VITE_WS_URL || 'ws://localhost:3000';
+    // Default to the Render backend WebSocket endpoint; can be overridden via VITE_WS_URL.
+    const wsUrl =
+      (import.meta as any).env?.VITE_WS_URL ||
+      'wss://mynoteapp-g3wt.onrender.com/yjs';
     const roomName = `note-${mainNoteId}`;
     
     this.pageStructureProvider = new WebsocketProvider(wsUrl, roomName, this.pageStructureDoc);

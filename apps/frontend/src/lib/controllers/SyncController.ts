@@ -8,7 +8,9 @@ import { PPTSyncHandler } from '../handlers/PPTSyncHandler';
 import { HandwriteSyncHandler } from '../handlers/HandwriteSyncHandler';
 import * as Y from 'yjs';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Use Render backend as the default API base. You can still override via VITE_API_URL if needed.
+const API_BASE =
+  import.meta.env.VITE_API_URL || 'https://mynoteapp-g3wt.onrender.com/api';
 // Upload/static 文件所在的基础地址（去掉 /api 前缀）
 const UPLOAD_BASE = API_BASE.replace(/\/api\/?$/i, '');
 

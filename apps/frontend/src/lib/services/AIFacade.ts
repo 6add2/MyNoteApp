@@ -1,6 +1,8 @@
 import type { Stroke } from '../../shared-types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Use Render backend as the default API base. You can still override via VITE_API_URL if needed.
+const API_BASE =
+  import.meta.env.VITE_API_URL || 'https://mynoteapp-g3wt.onrender.com/api';
 
 export class AIFacade {
   public async uploadScreenshot(): Promise<string> {
