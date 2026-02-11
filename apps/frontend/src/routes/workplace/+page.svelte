@@ -26,6 +26,11 @@
   $: notesStore.setSortBy(sortBy);
   
   onMount(async () => {
+    const valid = await AuthController.validateSession();
+    if (!valid) {
+      push('/signin');
+      return;
+    }
     await SyncController.fetchNotes();
   });
   

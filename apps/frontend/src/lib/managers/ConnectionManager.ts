@@ -42,10 +42,9 @@ export class ConnectionManager {
     // WebSocket endpoint for Yjs – can be overridden via env.
     // We rely on y-websocket default behavior, which uses
     // `${serverUrl}/${roomName}` as the doc path.
-    // Default to the Render backend WebSocket endpoint in production.
     const wsUrl =
       (import.meta as any).env?.VITE_WS_URL ||
-      'wss://mynoteapp-g3wt.onrender.com/yjs';
+      'ws://localhost:3000';
 
     // Use note-specific room name so each note gets its own doc
     const roomName = `note-${this.noteId}`;

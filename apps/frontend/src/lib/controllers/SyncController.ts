@@ -1,6 +1,7 @@
 import { authStore } from '../../stores/authStore';
 import { getBaseTitle, notesStore } from '../../stores/notesStore';
 import type { NoteMetadata } from '../../shared-types';
+import { AuthController } from './AuthController';
 import { connectionManagerFactory } from '../managers/ConnectionManager';
 import { yDocManagerFactory } from '../managers/YDocManager';
 import { WordSyncHandler } from '../handlers/WordSyncHandler';
@@ -8,9 +9,7 @@ import { PPTSyncHandler } from '../handlers/PPTSyncHandler';
 import { HandwriteSyncHandler } from '../handlers/HandwriteSyncHandler';
 import * as Y from 'yjs';
 
-// Use Render backend as the default API base. You can still override via VITE_API_URL if needed.
-const API_BASE =
-  import.meta.env.VITE_API_URL || 'https://mynoteapp-g3wt.onrender.com/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 // Upload/static 文件所在的基础地址（去掉 /api 前缀）
 const UPLOAD_BASE = API_BASE.replace(/\/api\/?$/i, '');
 
@@ -18,6 +17,24 @@ function getAuthHeader(): HeadersInit {
   let token: string | null = null;
   authStore.subscribe((s) => (token = s.accessToken))();
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/**
+ * Fetch with 401 handling: on 401, try refresh token and retry once.
+ * Ensures long-idle sessions can recover without requiring re-login.
+ */
+async function fetchWithAuthRefresh(url: string, init: RequestInit = {}): Promise<Response> {
+  let response = await fetch(url, init);
+  if (response.status === 401) {
+    const refreshed = await AuthController.refreshToken();
+    if (refreshed) {
+      response = await fetch(url, {
+        ...init,
+        headers: { ...init.headers, ...getAuthHeader() } as HeadersInit,
+      });
+    }
+  }
+  return response;
 }
 
 /**
@@ -36,10 +53,10 @@ export class SyncController {
 
   /**
    * Small helper to perform a JSON HTTP request and throw on non-OK responses.
-   * Callers remain responsible for setting headers (auth, content-type, etc.).
+   * On 401, attempts token refresh and retries once before throwing.
    */
   private static async requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
-    const response = await fetch(url, init);
+    const response = await fetchWithAuthRefresh(url, init);
     if (!response.ok) {
       throw new Error(`Request failed with status ${response.status}`);
     }
@@ -104,7 +121,7 @@ export class SyncController {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(`${API_BASE}/notes/${noteId}/pdf-backgrounds`, {
+      const response = await fetchWithAuthRefresh(`${API_BASE}/notes/${noteId}/pdf-backgrounds`, {
         method: 'POST',
         headers: {
           // 只加认证头，不手动设置 Content-Type，浏览器会自动带 multipart 边界
@@ -157,7 +174,7 @@ export class SyncController {
    */
   public static async getNote(id: string): Promise<NoteMetadata | null> {
     try {
-      const response = await fetch(`${API_BASE}/notes/${id}`, {
+      const response = await fetchWithAuthRefresh(`${API_BASE}/notes/${id}`, {
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeader(),
@@ -224,7 +241,7 @@ export class SyncController {
       const baseTitle = getBaseTitle(note.title);
       
       // Delete the note
-      const response = await fetch(`${API_BASE}/notes/${id}`, {
+      const response = await fetchWithAuthRefresh(`${API_BASE}/notes/${id}`, {
         method: 'DELETE',
         headers: {
           ...getAuthHeader(),
@@ -247,7 +264,7 @@ export class SyncController {
 
         for (const pageNote of relatedNotes) {
           try {
-            await fetch(`${API_BASE}/notes/${pageNote.id}`, {
+            await fetchWithAuthRefresh(`${API_BASE}/notes/${pageNote.id}`, {
               method: 'DELETE',
               headers: {
                 ...getAuthHeader(),
@@ -275,7 +292,7 @@ export class SyncController {
     isPublic: boolean = true
   ): Promise<{ success: boolean; shareUrl?: string; error?: string }> {
     try {
-      const response = await fetch(`${API_BASE}/notes/${id}/share`, {
+      const response = await fetchWithAuthRefresh(`${API_BASE}/notes/${id}/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

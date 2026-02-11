@@ -1,8 +1,6 @@
 import { authStore, type User } from '../../stores/authStore';
 
-// Use Render backend as the default API base. You can still override via VITE_API_URL if needed.
-const API_BASE =
-  import.meta.env.VITE_API_URL || 'https://mynoteapp-g3wt.onrender.com/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 interface AuthResponse {
   message?: string;

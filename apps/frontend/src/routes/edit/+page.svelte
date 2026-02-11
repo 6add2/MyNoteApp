@@ -7,6 +7,7 @@
   import EditorContainer from '$lib/components/EditorContainer.svelte';
   import { pagesStore, type PageState } from '../../stores/pagesStore';
   import { applyPdfBackgrounds } from '$lib/services/pdfBackgroundService';
+  import { AuthController } from '$lib/controllers/AuthController';
   import { SyncController } from '$lib/controllers/SyncController';
   
   // Export params from router
@@ -938,6 +939,11 @@
 
   onMount(() => {
     (async () => {
+      const valid = await AuthController.validateSession();
+      if (!valid) {
+        push('/signin');
+        return;
+      }
       if (params.id) {
         await pagesStore.initFirstPage(params.id, {
           onLoadingChange: (loading) => { isLoading = loading; },
