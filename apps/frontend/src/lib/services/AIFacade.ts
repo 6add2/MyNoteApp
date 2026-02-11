@@ -1,6 +1,6 @@
 import type { Stroke } from '../../shared-types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://mynoteapp-g3wt.onrender.com/api';
 
 export class AIFacade {
   public async uploadScreenshot(): Promise<string> {

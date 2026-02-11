@@ -44,7 +44,7 @@ export class ConnectionManager {
     // `${serverUrl}/${roomName}` as the doc path.
     const wsUrl =
       (import.meta as any).env?.VITE_WS_URL ||
-      'ws://localhost:3000';
+      'wss://mynoteapp-g3wt.onrender.com/yjs';
 
     // Use note-specific room name so each note gets its own doc
     const roomName = `note-${this.noteId}`;

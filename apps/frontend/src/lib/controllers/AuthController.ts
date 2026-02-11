@@ -1,6 +1,6 @@
 import { authStore, type User } from '../../stores/authStore';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://mynoteapp-g3wt.onrender.com/api';
 
 interface AuthResponse {
   message?: string;
