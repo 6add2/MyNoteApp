@@ -1,7 +1,7 @@
 <script lang="ts">
   import { push } from 'svelte-spa-router';
   import { onMount, onDestroy, tick } from 'svelte';
-  import { currentUser } from '../../stores/authStore';
+  import { authStore, currentUser } from '../../stores/authStore';
   import type { NoteMetadata } from '../../shared-types';
   import { page, formattingState } from '$lib/controllers/PageController';
   import EditorContainer from '$lib/components/EditorContainer.svelte';
@@ -941,6 +941,8 @@
     (async () => {
       const valid = await AuthController.validateSession();
       if (!valid) {
+        // Important: clear persisted auth state so SignIn won't auto-redirect
+        authStore.logout();
         push('/signin');
         return;
       }

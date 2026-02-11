@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import { AuthController } from '$lib/controllers/AuthController';
   import { SyncController } from '$lib/controllers/SyncController';
-  import { currentUser } from '../../stores/authStore';
+  import { authStore, currentUser } from '../../stores/authStore';
   import { notesStore, ownedNotes, sharedNotes, filteredNotes } from '../../stores/notesStore';
   import type { NoteMetadata } from '../../shared-types';
   
@@ -28,6 +28,8 @@
   onMount(async () => {
     const valid = await AuthController.validateSession();
     if (!valid) {
+      // Important: clear persisted auth state so SignIn won't auto-redirect
+      authStore.logout();
       push('/signin');
       return;
     }
