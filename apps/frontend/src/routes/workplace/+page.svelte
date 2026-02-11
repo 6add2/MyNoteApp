@@ -20,6 +20,7 @@
   let showNewNoteModal = false;
   let newNoteTitle = '';
   let isCreating = false;
+  let isMobileSidebarOpen = false;
   
   // Sync local state with store
   $: notesStore.setSearchQuery(searchQuery);
@@ -62,6 +63,8 @@
   }
   
   function openNote(id: string) {
+    // Close mobile sidebar when navigating to a note
+    isMobileSidebarOpen = false;
     push(`/edit/${id}`);
   }
   
@@ -90,7 +93,7 @@
   // ownedNotes and sharedNotes are imported from notesStore
 </script>
 
-<div class="workplace-container" class:sidebar-collapsed={sidebarCollapsed}>
+<div class="workplace-container" class:sidebar-collapsed={sidebarCollapsed} class:mobile-sidebar-open={isMobileSidebarOpen}>
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
@@ -232,11 +235,25 @@
     </div>
   </aside>
   
+  {#if isMobileSidebarOpen}
+    <div class="mobile-sidebar-backdrop" on:click={() => (isMobileSidebarOpen = false)}></div>
+  {/if}
+  
   <!-- Main Content -->
   <main class="main-content">
     <!-- Header -->
     <header class="content-header">
       <div class="header-left">
+        <button
+          class="mobile-menu-btn"
+          type="button"
+          aria-label="Toggle navigation"
+          on:click={() => (isMobileSidebarOpen = !isMobileSidebarOpen)}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M3 5h14M3 10h14M3 15h14" />
+          </svg>
+        </button>
         <h1>My Workspace</h1>
         <p class="subtitle">{$filteredNotes.length} notes</p>
       </div>
@@ -993,37 +1010,81 @@
     cursor: not-allowed;
   }
   
+  .mobile-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 40;
+  }
+
+  .mobile-menu-btn {
+    display: none;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #888;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .mobile-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+  }
+  
   /* Responsive */
   @media (max-width: 768px) {
+    .workplace-container {
+      flex-direction: column;
+    }
+
     .sidebar {
       position: fixed;
       left: 0;
       top: 0;
       bottom: 0;
+      width: 260px;
       z-index: 50;
       transform: translateX(-100%);
       transition: transform 0.2s ease;
     }
-    
-    .sidebar-collapsed .sidebar {
+
+    .workplace-container.mobile-sidebar-open .sidebar {
       transform: translateX(0);
-      width: 280px;
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
     }
-    
+
     .content-header {
       flex-direction: column;
       align-items: flex-start;
-      gap: 1rem;
+      gap: 0.75rem;
+      padding: 1rem 1.25rem;
     }
-    
+
     .header-actions {
       width: 100%;
       flex-wrap: wrap;
+      gap: 0.75rem;
     }
-    
+
     .search-box {
-      flex: 1;
-      min-width: 200px;
+      flex: 1 1 100%;
+      min-width: 0;
+    }
+
+    .notes-grid {
+      padding: 1.25rem;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .mobile-menu-btn {
+      display: inline-flex;
     }
   }
 </style>

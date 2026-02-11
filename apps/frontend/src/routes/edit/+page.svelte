@@ -20,6 +20,7 @@
   let sidebarCollapsed = true;
   let showShareModal = false;
   let shareUrl = '';
+  let isMobileSidebarOpen = false;
   const textColorOptions = ['#000000', '#ffffff', '#6ee7b7', '#3b82f6', '#f87171', '#fbbf24', '#a78bfa', '#9ca3af'];
   const highlightColorOptions = ['#fff59d', '#fef3c7', '#fde68a', '#fbcfe8', '#bfdbfe', '#c7d2fe', '#bbf7d0'];
   let showTextPalette = false;
@@ -1011,6 +1012,7 @@
   }
   
   function goBack() {
+    isMobileSidebarOpen = false;
     push('/workplace');
   }
 
@@ -1134,7 +1136,7 @@
 
 <svelte:window on:keydown={handleKeyDown} />
 
-<div class="edit-container" class:sidebar-collapsed={sidebarCollapsed}>
+<div class="edit-container" class:sidebar-collapsed={sidebarCollapsed} class:mobile-sidebar-open={isMobileSidebarOpen}>
   <!-- Mini Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
@@ -1176,6 +1178,16 @@
     <!-- Top Toolbar -->
     <header class="toolbar">
       <div class="toolbar-left">
+        <button
+          class="mobile-menu-btn"
+          type="button"
+          aria-label="Toggle navigation"
+          on:click={() => (isMobileSidebarOpen = !isMobileSidebarOpen)}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M3 5h14M3 10h14M3 15h14" />
+          </svg>
+        </button>
         <!-- Note Title (for active page) -->
         {#if activeNote}
           <input 
@@ -1772,6 +1784,10 @@
       {/if}
     </div>
   </main>
+  
+  {#if isMobileSidebarOpen}
+    <div class="mobile-sidebar-backdrop" on:click={() => (isMobileSidebarOpen = false)}></div>
+  {/if}
   
   <!-- Add/Delete Page Buttons (Bottom Left) -->
   <div class="page-control-buttons">
@@ -2626,5 +2642,110 @@
   
   .copy-btn:hover {
     transform: translateY(-1px);
+  }
+
+  .mobile-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 45;
+  }
+
+  .mobile-menu-btn {
+    display: none;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #888;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .mobile-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+  }
+
+  @media (max-width: 768px) {
+    .edit-container {
+      flex-direction: column;
+    }
+
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 240px;
+      z-index: 50;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+    }
+
+    .edit-container.mobile-sidebar-open .sidebar {
+      transform: translateX(0);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+    }
+
+    .main-area {
+      margin-left: 0;
+    }
+
+    .toolbar {
+      padding: 0.5rem 0.75rem;
+      flex-wrap: wrap;
+      row-gap: 0.5rem;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+      flex: 1 1 100%;
+      justify-content: space-between;
+    }
+
+    .note-title-input {
+      max-width: 100%;
+    }
+
+    .mode-toolbar {
+      padding: 0.5rem 0.75rem;
+      flex-wrap: wrap;
+      row-gap: 0.5rem;
+    }
+
+    .editor-area {
+      padding: 1rem;
+    }
+
+    .page-container,
+    .page-container.has-background {
+      width: 100%;
+    }
+
+    .page-control-buttons {
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 1rem;
+    }
+
+    .add-page-btn,
+    .delete-page-btn {
+      width: 48px;
+      height: 48px;
+    }
+
+    .mode-selector {
+      right: 1rem;
+      bottom: 1rem;
+    }
+
+    .mobile-menu-btn {
+      display: inline-flex;
+    }
   }
 </style>
