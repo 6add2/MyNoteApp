@@ -607,11 +607,11 @@ export class PageController {
    * Setup Yjs observers for a specific page (or active page if pageId not provided)
    * Returns unsubscribe function
    */
-  public setupYjsObservers(
+  public async setupYjsObservers(
     noteId: string,
     callbacks: YjsObserverCallbacks,
     pageId?: string
-  ): (() => void) | null {
+  ): Promise<(() => void) | null> {
     const resolved = this.getPageWithId(pageId);
     if (!resolved) return null;
     const { page: pageInstance } = resolved;
@@ -626,7 +626,7 @@ export class PageController {
     pageInstance.handlers.handwrite.reset();
 
     // Yjs: connect to collaborative document for this note
-    const result = SyncController.joinNote(noteId, 'word', {
+    const result = await SyncController.joinNote(noteId, 'word', {
       onInitialContent: (content) => {
         if (typeof content === 'string' && callbacks.onInitialContent) {
           callbacks.onInitialContent(content);

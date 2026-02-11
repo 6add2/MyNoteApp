@@ -160,6 +160,10 @@ function createPagesStore() {
         }
       }
     );
+
+    // Persist Yjs content snapshot as part of autosave.
+    // This makes note content survive server cold starts / restarts.
+    void SyncController.saveSnapshot(noteId);
   }
 
   async function sharePage(
@@ -533,7 +537,7 @@ function createPagesStore() {
 
     page.initializeSyncCallbacks(targetPageId, targetNoteId);
 
-      const unsubscribeFn = page.setupYjsObservers(
+      const unsubscribeFn = await page.setupYjsObservers(
         targetNoteId,
         {
           onInitialContent: (content) => {

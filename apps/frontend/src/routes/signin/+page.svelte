@@ -1,7 +1,7 @@
 <script lang="ts">
   import { push } from 'svelte-spa-router';
   import { AuthController } from '$lib/controllers/AuthController';
-  import { authStore, isAuthenticated, isLoading, authError } from '../../stores/authStore';
+  import { authStore, isLoading, authError } from '../../stores/authStore';
   import { onMount } from 'svelte';
   
   let mode: 'login' | 'register' = 'login';
@@ -13,14 +13,17 @@
 
   console.log('VITE_API_URL =', import.meta.env.VITE_API_URL);
   
-  // Redirect if already authenticated
+  // Redirect only after validating the session, to avoid "fake login" from stale localStorage tokens.
   onMount(() => {
-    const unsubscribe = isAuthenticated.subscribe(value => {
-      if (value) {
+    (async () => {
+      const valid = await AuthController.validateSession();
+      if (valid) {
         push('/workplace');
+      } else {
+        // Ensure persisted auth state is cleared so we don't bounce back.
+        authStore.logout();
       }
-    });
-    return unsubscribe;
+    })();
   });
   
   async function handleSubmit() {

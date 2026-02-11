@@ -333,6 +333,50 @@ export class SyncController {
   }
 
   /**
+   * Save current Yjs document state to backend snapshot storage.
+   * This is the persistence layer that survives server restarts / cold starts.
+   */
+  public static async saveSnapshot(id: string): Promise<boolean> {
+    try {
+      const yDocManager = yDocManagerFactory.getOrCreate(id);
+      const ydoc = yDocManager.getYDoc();
+      const update = Y.encodeStateAsUpdate(ydoc);
+      const snapshot = uint8ToBase64(update);
+
+      const response = await fetchWithAuthRefresh(`${API_BASE}/notes/${id}/snapshot`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ snapshot }),
+      });
+
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Load snapshot from backend and apply it to the local Yjs doc before connecting.
+   */
+  public static async loadSnapshotIntoYDoc(id: string): Promise<boolean> {
+    try {
+      const snapshot = await this.getSnapshot(id);
+      if (!snapshot) return false;
+
+      const bytes = base64ToUint8(snapshot);
+      const yDocManager = yDocManagerFactory.getOrCreate(id);
+      const ydoc = yDocManager.getYDoc();
+      Y.applyUpdate(ydoc, bytes);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Load a note by ID (with loading/error state management)
    */
   public static async loadNote(
@@ -410,16 +454,20 @@ export class SyncController {
    * Orchestrates Yjs document initialization and WebSocket connection.
    * Sets up observer for remote changes.
    */
-  public static joinNote(
+  public static async joinNote(
     noteId: string,
     mode: 'word' | 'ppt' | 'handwrite',
     callbacks?: {
       onContentChange?: (content: unknown) => void;
       onInitialContent?: (content: unknown) => void;
     }
-  ): { unsubscribe: () => void } {
+  ): Promise<{ unsubscribe: () => void }> {
     // Get or create YDocManager for this note
     const yDocManager = yDocManagerFactory.getOrCreate(noteId);
+
+    // Rehydrate local doc from persisted snapshot before connecting.
+    // If snapshot doesn't exist yet, this is a no-op.
+    await this.loadSnapshotIntoYDoc(noteId);
     
     // Get or create ConnectionManager for this note and connect
     const connectionManager = connectionManagerFactory.getOrCreate(noteId, yDocManager);
@@ -502,5 +550,25 @@ export class SyncController {
       backgroundUrl: backendNote.metadata?.backgroundUrl,
     };
   }
+}
+
+function uint8ToBase64(bytes: Uint8Array): string {
+  // Chunked conversion avoids call stack / argument limits on large docs.
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+}
+
+function base64ToUint8(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
 }
 

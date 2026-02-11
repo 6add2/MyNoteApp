@@ -29,6 +29,7 @@ router.delete('/:id', (req, res) => notesController.delete(req, res));
 
 // Yjs document snapshot
 router.get('/:id/snapshot', (req, res) => notesController.getSnapshot(req, res));
+router.post('/:id/snapshot', (req, res) => notesController.saveSnapshot(req, res));
 
 // Sharing
 router.post('/:id/share', (req, res) => notesController.share(req, res));

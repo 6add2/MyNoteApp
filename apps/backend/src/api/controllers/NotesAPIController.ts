@@ -223,6 +223,66 @@ export class NotesAPIController {
   }
 
   /**
+   * POST /api/notes/:id/snapshot
+   * Save Yjs document snapshot (base64-encoded)
+   *
+   * Body:
+   *   { snapshot: string | null }
+   */
+  public async saveSnapshot(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.userId;
+      const { id } = req.params;
+      const { snapshot } = req.body as { snapshot?: unknown };
+
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        res.status(400).json({ error: 'Invalid note ID' });
+        return;
+      }
+
+      // Only owner/editor can persist snapshots
+      const note = await Note.findOne({
+        _id: id,
+        $or: [
+          { ownerId: userId },
+          { 'permissions.userId': userId, 'permissions.role': { $in: ['owner', 'editor'] } },
+        ],
+      });
+
+      if (!note) {
+        res.status(404).json({ error: 'Note not found or no permission' });
+        return;
+      }
+
+      if (snapshot == null) {
+        note.yDocSnapshot = null as any;
+        await note.save();
+        res.json({ ok: true });
+        return;
+      }
+
+      if (typeof snapshot !== 'string') {
+        res.status(400).json({ error: 'Invalid snapshot payload' });
+        return;
+      }
+
+      // Basic sanity check: base64 should decode
+      try {
+        note.yDocSnapshot = Buffer.from(snapshot, 'base64');
+      } catch {
+        res.status(400).json({ error: 'Snapshot is not valid base64' });
+        return;
+      }
+
+      await note.save();
+      res.json({ ok: true });
+    } catch (error) {
+      console.error('Save snapshot error:', error);
+      res.status(500).json({ error: 'Failed to save snapshot' });
+    }
+  }
+
+  /**
    * POST /api/notes/:id/share
    * Share a note
    */
